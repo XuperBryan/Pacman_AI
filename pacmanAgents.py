@@ -23,7 +23,7 @@ class LeftTurnAgent(game.Agent):
     "An agent that turns left at every opportunity"
 
     def getAction(self, state):
-        legal = state.getLegalPacmanActions()
+        legal = state.getLegalPacmanActions(self.index)
         current = state.getPacmanState().configuration.direction
         if current == Directions.STOP:
             current = Directions.NORTH

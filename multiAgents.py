@@ -72,7 +72,7 @@ class ReflexAgent(Agent):
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-        
+
         if len(newFood.asList()):
             fooddist = util.manhattanDistance(newPos, newFood.asList()[0])
         else:
@@ -88,7 +88,149 @@ def scoreEvaluationFunction(currentGameState, index):
     This evaluation function is meant for use with adversarial search agents
     (not reflex agents).
     """
-    return currentGameState.getScore()[index]
+    # given just the gameState, return its value
+    # assumed that this happens directly after an action
+
+    newPos = currentGameState.getPacmanPosition(index)
+    newFood = currentGameState.getFood().asList()
+    newPower = currentGameState.getCapsules()
+    newGhostStates = currentGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]    
+    newGhostPos = currentGameState.getGhostPositions()
+
+    # print("\nnewPos: ", newPos)
+    # print("newFood: ", newFood)
+    # print("newPower: ", newPower)
+    # print("newGhostStates: ", newGhostStates)
+    # print("newScaredTimes: ", newScaredTimes)
+    # print("newGhostPos: ", newGhostPos)
+
+
+    if currentGameState.isLose():
+        return -float("inf")
+    
+    if currentGameState.isWin():
+        return float("inf")
+
+    # ghost function
+    def ghostScore(gameState):
+        if len(gameState.getGhostStates()) == 0:
+                return 0
+        score = 0
+        for pacman in gameState.getPacmanPositions():
+            for ghost in gameState.getGhostStates():
+                score -= ((max(5 - manhattanDistance(gameState.getPacmanPositions(), ghost), 0)) ** 10)
+        
+        closestGhostDistance = 99999
+        ghostIndex = 0
+        for i in range(len(newGhostPos)):
+            currDistance=manhattanDistance(newGhostPos[i], newPos)
+            if closestGhostDistance > currDistance:
+                closestGhostDistance = currDistance
+                ghostIndex = i 
+        if gameState.getGhostStates()[ghostIndex].scaredTimer > 0:
+            score = score * -1
+        return score
+    
+    # power function
+    def powerScore(gameState):
+        score = 0
+        for pacman in gameState.getPacmanPositions():
+            pacScore = []
+            for powerCoord in gameState.currentGameState.getCapsules():
+                pacScore.append(manhattanDistance(powerCoord, pacman))
+            score -= min(pacScore)
+
+        score = score * -2
+        score -= len(gameState.currentGameState.getCapsules()) * 150
+        return score
+
+    
+    # food function
+    def foodScore(gameState):
+        score = 0
+        for pacman in gameState.getPacmanPositions():
+            pacScore = []
+            for foodCoord in gameState.currentGameState.getFood().asList()
+                pacScore.append(manhattanDistance(foodCoord, pacman))
+            score -= min(pacScore)
+            
+        score = score * -2
+        score -= len(gameState.currentGameState.getCapsules()) * 50
+        return score
+
+
+    # want to decrease score if ghost is really close
+    # totalScore = 0.0   
+    # closestGhostDistance = 99999.0
+    # closestFoodDistance = 99999.0
+    # numFood = 0.0
+    # closestPowerDistance = 99999.0
+    # numPower = 0.0
+    
+    # ghostIndex = 0
+    # for i in range(len(newGhostPos)):
+    #     currDistance=manhattanDistance(newGhostPos[i], newPos)
+    #     if closestGhostDistance > currDistance:
+    #         closestGhostDistance = currDistance
+    #         ghostIndex = i 
+    
+    # if len(newGhostPos) == 0:
+    #     closestGhostDistance = 0
+
+    # # want to increase score if close to food
+    # for foodCoord in newFood:
+    #     currDistance=manhattanDistance(foodCoord, newPos)
+    #     if closestFoodDistance > currDistance:
+    #         closestFoodDistance = currDistance 
+
+    # # want to decrease score if more food left
+    # numFood = currentGameState.getNumFood() nbvvn nvbgty
+
+    # # want to increase score if close to power pellet
+    # for powerCoord in newPower:
+    #     currDistance=manhattanDistance(powerCoord, newPos)
+    #     if closestPowerDistance > currDistance:
+    #         closestPowerDistance = currDistance 
+
+    # if len(newPower) == 0:
+    #     closestPowerDistance = 0
+
+    # # want to decrease score if more power pellets left
+    # numPower = len(newPower)
+
+    # if len(newGhostPos) != 0:
+    #     if newGhostStates[ghostIndex].scaredTimer > 0:
+    #         # go towards ghosts if scared
+    #         print("GHOSTS ARE SCARED!")
+    #         return -closestGhostDistance
+    #     elif closestGhostDistance==3:
+    #         return -1e3
+    #     elif closestGhostDistance==2:
+    #         return -1e5
+    #     elif closestGhostDistance<=1:
+    #         return -float("inf")
+
+    # # print("\n\ninitial totalScore", totalScore)
+    # # totalScore += closestGhostDistance * 1.5
+    # # print("totalScore after closestGhostDistance", totalScore)
+    # totalScore -= closestFoodDistance * 2
+    # print("totalScore after closestFoodDistance", totalScore)
+    # totalScore -= numFood * 3
+    # print("totalScore after numFood", totalScore)
+    # totalScore -= closestPowerDistance 
+    # print("totalScore after closestPowerDistance", totalScore)
+    # # totalScore -= numPower 
+    # # print("totalScore after numPower", totalScore)
+
+    # # print("\nclosestGhostDistance", closestGhostDistance)
+    # # print("closestFoodDistance", closestFoodDistance)
+    # # print("numFood", numFood)
+    # # print("closestPowerDistance", closestPowerDistance)
+    # # print("numPower", numPower)
+    # print("totalScore", totalScore)
+    # print()
+    return totalScore
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -116,18 +258,68 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
     """
     You implementation here
     """
+    """
+    A reflex agent chooses an action at each choice point by examining
+    its alternatives via a state evaluation function.
+
+    The code below is provided as a guide.  You are welcome to change
+    it in any way you see fit, so long as you don't touch our method
+    headers.
+    """
+
 
     def getAction(self, gameState):
-        index = self.index # pacman index
         """
-        Returns the expectimax action using self.depth and self.evaluationFunction
+        You do not need to change this method, but you're welcome to.
 
-        All ghosts should be modeled as choosing uniformly at random from their
-        legal moves.
+        getAction chooses among the best options according to the evaluation function.
+
+        Just like in the previous project, getAction takes a GameState and returns
+        some Directions.X for some X in the set {NORTH, SOUTH, WEST, EAST, STOP}
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # Collect legal moves and successor states
+        legalMoves = gameState.getLegalActions()        
+        legalMoves.remove("Stop")
+
+        # Choose one of the best actions
+        scores = [self.evaluationFunction(gameState.generatePacmanSuccessor(self.index, action)) for action in legalMoves]
+        bestScore = max(scores)
         
+        bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
+        chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+        if scores[chosenIndex] == float("inf"):
+            print("scores", scores)
+            # print("bestScore", bestScore)
+            print("bestIndices", bestIndices)
+            print("chosenIndex", chosenIndex)
+            print("chosenAction", legalMoves[chosenIndex])
+            print()
+            return legalMoves[chosenIndex]
+
+        chance = random.random()
+        if chance > 0.8:
+            print("RNG TIME")
+            chosenIndex = random.randint(0,len(legalMoves)-1)
+            initial = chosenIndex
+            while scores[chosenIndex] == -float("inf"):
+                print("CRISIS!! chosen index was: ", chosenIndex)
+                chosenIndex+=1
+                chosenIndex = chosenIndex % len(legalMoves)
+                print("chosen index is now: ", chosenIndex)
+                if chosenIndex == initial:
+                    print("RIP no choices left")
+                    break
+
+        print("scores", scores)
+        # print("bestScore", bestScore)
+        print("bestIndices", bestIndices)
+        print("chosenIndex", chosenIndex)
+        print("chosenAction", legalMoves[chosenIndex])
+        print()
+        "Add more of your code here if you want to"
+
+        return legalMoves[chosenIndex]
+    
 class RandomAgent(MultiAgentSearchAgent):
     def getAction(self, gameState):
         legalMoves = gameState.getLegalActions(self.index)
