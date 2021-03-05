@@ -125,29 +125,17 @@ def scoreEvaluationFunction(currentGameState, index):
         if len(gameState.getGhostStates()) == 0:
                 return 0
         score = 0
-        for pacman in gameState.getPacmanPositions():
-            for ghost in gameState.getGhostPositions():
-                score -= ((max(5 - euclidDistance(pacman, ghost), 0)) ** 10)
-                if manhattanDistance(pacman, ghost) < 2:
-                    score = -float("inf")
-        
-        closestGhostDistance = 99999
-        ghostIndex = 0
         newGhostPos = gameState.getGhostPositions()
-        newPos = currentGameState.getPacmanPositions()
-        for pacman in newPos:
+        newGhostStates = gameState.getGhostStates()
+        for pacman in gameState.getPacmanPositions():
             for i in range(len(newGhostPos)):
-                currDistance=euclidDistance(newGhostPos[i], pacman)
-                if closestGhostDistance > currDistance:
-                    closestGhostDistance = currDistance
-                    ghostIndex = i 
-        if gameState.getGhostStates()[ghostIndex].scaredTimer > 0:
-            score = score * -1
-            # if GhostRules.collide(gameState, gameState.getGhostStates()[ghostIndex], ghostIndex, 0):
-            for pacman in gameState.getPacmanPositions():
-                if manhattanDistance(newGhostPos[ghostIndex], pacman) <= 1:
-                    # print("Collision inbound!! i hope...")
-                    return float("inf")
+                if newGhostStates[i].scaredTimer > 0:
+                    score += ((max(7 - euclidDistance(pacman, newGhostPos[i]), 0)) ** 2)
+                else:
+                    score -= ((max(5 - euclidDistance(pacman, newGhostPos[i]), 0)) ** 2)
+                    if manhattanDistance(pacman, newGhostPos[i]) < 2:
+                        return -float("inf")
+        
         return score
     
     # power function
@@ -172,24 +160,23 @@ def scoreEvaluationFunction(currentGameState, index):
             pacScore = []
             for foodCoord in gameState.getFood().asList():
                 pacScore.append(euclidDistance(foodCoord, pacman))
-            score -= min(pacScore)
+            score = min(pacScore)
             
         score = score * -2
-        score -= len(gameState.getFood().asList()) * 150
-        if(len(gameState.getFood().asList()) <= 2):
-            score = score * 5
+        score -= len(gameState.getFood().asList()) * 15
         return score
 
 
-    totalScore = 0
+    totalScore = currentGameState.getScore()[0]
     totalScore += ghostScore(currentGameState) 
     totalScore += foodScore(currentGameState)
     # totalScore += powerScore(currentGameState)
 
+    # print("gamestate score", currentGameState.getScore()[0])
     # print("ghostScore", ghostScore(currentGameState))
     # print("foodScore", foodScore(currentGameState))
-    # print("numFood", len(newFood))
-    # # print("powerScore", powerScore(currentGameState))
+    # # # print("numFood", len(newFood))
+    # # # # print("powerScore", powerScore(currentGameState))
     # print("totalScore", totalScore)
     # # print("closestFoodDistance", closestFoodDistance)
     # # print("numFood", numFood)
@@ -275,8 +262,6 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
         def maxValue(gameState, agentIndex):
             value = -float("inf")
             legalMoves = gameState.getLegalActions(agentIndex % gameState.getNumAgents())  
-            if "Stop" in legalMoves:
-                    legalMoves.remove("Stop")
             for action in legalMoves:
                 value = max(value, expectiMax(gameState.generatePacmanSuccessor(agentIndex % gameState.getNumAgents(), action), agentIndex+1))
             # print("maxValue gave:", value)
@@ -318,9 +303,7 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
 
 
         # Collect legal moves and successor states
-        legalMoves = gameState.getLegalActions(self.index)  
-        if "Stop" in legalMoves:
-                legalMoves.remove("Stop")      
+        legalMoves = gameState.getLegalActions(self.index)       
 
         # Choose one of the best actions
         scores = [expectiMax(gameState.generatePacmanSuccessor(self.index, action), self.index) for action in legalMoves]
@@ -329,7 +312,7 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
         if pastAction in legalMoves:
             for i in range(len(scores)):
                 if legalMoves[i] == pastAction:
-                    scores[i]+=5
+                    scores[i]= scores[i]
     
         opposite = "Stop"
         count = 0
@@ -348,7 +331,7 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
             for i in range(len(scores)):
                 if legalMoves[i] == pastThree[0]:
                     # print(legalMoves[i], " has been taken too many times!")
-                    scores[i]-=15
+                    scores[i]=scores[i]
                 # if legalMoves[i] == opposite:
                 #     print("opposite move ", opposite, "is getting punished too")
                 #     scores[i] -= 10
@@ -361,15 +344,15 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
         if scores[chosenIndex] == float("inf"):
             # print("scores", scores)
-            # # print("bestScore", bestScore)
-            # print("bestIndices", bestIndices)
+            # # # print("bestScore", bestScore)
+            # # print("bestIndices", bestIndices)
             # print("chosenIndex", chosenIndex)
             # print("chosenAction", legalMoves[chosenIndex])
             # print()
             return legalMoves[chosenIndex]
 
         chance = random.random()
-        if chance > .85:
+        if chance > 2:
             # print("RNG TIME")
             chosenIndex = random.randint(0,len(legalMoves)-1)
             initial = chosenIndex
@@ -385,9 +368,9 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
         
         # print("scores", scores)
         # print("actions", legalMoves)
-        # print("bestScore", bestScore)
-        # print("bestIndices", bestIndices)
-        # print("chosenIndex", chosenIndex)
+        # # # print("bestScore", bestScore)
+        # # # print("bestIndices", bestIndices)
+        # # # print("chosenIndex", chosenIndex)
         # print("chosenAction", legalMoves[chosenIndex])
         # print()
 
