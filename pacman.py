@@ -137,7 +137,7 @@ class GameState:
 
     def getLegalPacmanActions(self, agentIndex):
         if agentIndex >= self.data.numPacman:
-            raise Exception("Invalid index passed to getGhostState")
+            raise Exception("Invalid index passed to getLegalPacmanActions")
         return self.getLegalActions(agentIndex)
 
     def generatePacmanSuccessor(self, agentIndex, action):
@@ -145,7 +145,7 @@ class GameState:
         Generates the successor state after the specified pacman move
         """
         if agentIndex >= self.data.numPacman:
-            raise Exception("Invalid index passed to getGhostState")
+            raise Exception("Invalid index passed to generatePacmanSuccessor")
         return self.generateSuccessor(agentIndex, action)
 
     def getPacmanState(self, agentIndex):
@@ -156,12 +156,12 @@ class GameState:
         state.direction gives the travel vector
         """
         if agentIndex >= self.data.numPacman:
-            raise Exception("Invalid index passed to getGhostState")
+            raise Exception("Invalid index passed to getPacmanState")
         return self.data.agentStates[agentIndex].copy()
 
     def getPacmanPosition(self, agentIndex):
         if agentIndex >= self.data.numPacman:
-            raise Exception("Invalid index passed to getGhostState")
+            raise Exception("Invalid index passed to getPacmanPosition")
         return self.data.agentStates[agentIndex].getPosition()
 
     def getPacmanPositions(self):
