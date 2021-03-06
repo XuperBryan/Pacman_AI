@@ -24,9 +24,6 @@ def euclidDistance(xy1, xy2):
     "Returns the euclidean distance between points xy1 and xy2"
     return sqrt((xy1[0]-xy2[0])**2+(xy1[1]-xy2[1])**2)
 
-pastAction = "Stop"
-pastThree = ["Stop", "Stop", "Stop"]
-
 class ReflexAgent(Agent):
     """
     A reflex agent chooses an action at each choice point by examining
@@ -97,23 +94,6 @@ def scoreEvaluationFunction(currentGameState, index):
     This evaluation function is meant for use with adversarial search agents
     (not reflex agents).
     """
-    # given just the gameState, return its value
-    # assumed that this happens directly after an action
-
-    newPos = currentGameState.getPacmanPosition(index)
-    newFood = currentGameState.getFood().asList()
-    newPower = currentGameState.getCapsules()
-    newGhostStates = currentGameState.getGhostStates()
-    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]    
-    newGhostPos = currentGameState.getGhostPositions()
-
-    # print("\nnewPos: ", newPos)
-    # print("newFood: ", newFood)
-    # print("newPower: ", newPower)
-    # print("newGhostStates: ", newGhostStates)
-    # print("newScaredTimes: ", newScaredTimes)
-    # print("newGhostPos: ", newGhostPos)
-
     if currentGameState.isLose():
         return -float("inf")
     
@@ -130,29 +110,14 @@ def scoreEvaluationFunction(currentGameState, index):
         for pacman in gameState.getPacmanPositions():
             for i in range(len(newGhostPos)):
                 if newGhostStates[i].scaredTimer > 0:
-                    score += ((max(7 - euclidDistance(pacman, newGhostPos[i]), 0)) ** 2)
+                    score += ((max(4 - euclidDistance(pacman, newGhostPos[i]), 0)) ** 2)
                 else:
-                    score -= ((max(5 - euclidDistance(pacman, newGhostPos[i]), 0)) ** 2)
+                    score -= ((max(4 - euclidDistance(pacman, newGhostPos[i]), 0)) ** 2)
                     if manhattanDistance(pacman, newGhostPos[i]) < 2:
                         return -float("inf")
         
         return score
     
-    # power function
-    def powerScore(gameState):
-        score = 0
-        for pacman in gameState.getPacmanPositions():
-            pacScore = []
-            for powerCoord in gameState.getCapsules():
-                pacScore.append(euclidDistance(powerCoord, pacman))
-            score -= min(pacScore)
-
-        score = score * -2
-        score -= len(gameState.getCapsules()) * 100
-        return score
-
-
-
     # food function
     def foodScore(gameState):
         score = 0
@@ -170,19 +135,6 @@ def scoreEvaluationFunction(currentGameState, index):
     totalScore = currentGameState.getScore()[0]
     totalScore += ghostScore(currentGameState) 
     totalScore += foodScore(currentGameState)
-    # totalScore += powerScore(currentGameState)
-
-    # print("gamestate score", currentGameState.getScore()[0])
-    # print("ghostScore", ghostScore(currentGameState))
-    # print("foodScore", foodScore(currentGameState))
-    # # # print("numFood", len(newFood))
-    # # # # print("powerScore", powerScore(currentGameState))
-    # print("totalScore", totalScore)
-    # # print("closestFoodDistance", closestFoodDistance)
-    # # print("numFood", numFood)
-    # # print("closestPowerDistance", closestPowerDistance)
-    # # print("numPower", numPower)
-    # print()
     return totalScore
 
 class MultiAgentSearchAgent(Agent):
@@ -264,7 +216,6 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
             legalMoves = gameState.getLegalActions(agentIndex % gameState.getNumAgents())  
             for action in legalMoves:
                 value = max(value, expectiMax(gameState.generatePacmanSuccessor(agentIndex % gameState.getNumAgents(), action), agentIndex+1))
-            # print("maxValue gave:", value)
             return value
         
         def expectValue(gameState, agentIndex):
@@ -273,12 +224,10 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
 
             dist = getDistribution(self, gameState, agentIndex)
             if len(dist) == 0:
-                # print("expect value manually set to -inf", value)
                 value = -float("inf")
             for action in dist:
                 p = dist[action]
                 value += p * expectiMax(gameState.generateSuccessor(agentIndex % gameState.getNumAgents(), action), agentIndex+1)
-            # print("expectValue gave:", value)
             return value
 
         def expectiMax(gameState, agentIndex):
@@ -306,54 +255,17 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
         legalMoves = gameState.getLegalActions(self.index)       
 
         # Choose one of the best actions
-        scores = [expectiMax(gameState.generatePacmanSuccessor(self.index, action), self.index) for action in legalMoves]
-        global pastAction
-        global pastThree
-        if pastAction in legalMoves:
-            for i in range(len(scores)):
-                if legalMoves[i] == pastAction:
-                    scores[i]= scores[i]
-    
-        opposite = "Stop"
-        count = 0
-        for i in range(len(pastThree)):
-            if pastThree[i] == pastThree[0]:
-                count+=1
-        if count == 3:
-            if pastThree[0] == "North":
-                opposite = "South"
-            if pastThree[0] == "South":
-                opposite = "North"
-            if pastThree[0] == "East":
-                opposite = "West"
-            if pastThree[0] == "West":
-                opposite = "East"
-            for i in range(len(scores)):
-                if legalMoves[i] == pastThree[0]:
-                    # print(legalMoves[i], " has been taken too many times!")
-                    scores[i]=scores[i]
-                # if legalMoves[i] == opposite:
-                #     print("opposite move ", opposite, "is getting punished too")
-                #     scores[i] -= 10
-
-
+        scores = [expectiMax(gameState.generatePacmanSuccessor(self.index, action), self.index + 1) for action in legalMoves]
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         
 
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
         if scores[chosenIndex] == float("inf"):
-            # print("scores", scores)
-            # # # print("bestScore", bestScore)
-            # # print("bestIndices", bestIndices)
-            # print("chosenIndex", chosenIndex)
-            # print("chosenAction", legalMoves[chosenIndex])
-            # print()
             return legalMoves[chosenIndex]
 
         chance = random.random()
-        if chance > 2:
-            # print("RNG TIME")
+        if chance > 1:
             chosenIndex = random.randint(0,len(legalMoves)-1)
             initial = chosenIndex
             while scores[chosenIndex] == -float("inf"):
@@ -361,18 +273,6 @@ class MultiPacmanAgent(MultiAgentSearchAgent):
                 chosenIndex = chosenIndex % len(legalMoves)
                 if chosenIndex == initial:
                     break
-
-        pastAction = legalMoves[chosenIndex]
-        pastThree.append(legalMoves[chosenIndex])
-        pastThree.pop(0)
-        
-        # print("scores", scores)
-        # print("actions", legalMoves)
-        # # # print("bestScore", bestScore)
-        # # # print("bestIndices", bestIndices)
-        # # # print("chosenIndex", chosenIndex)
-        # print("chosenAction", legalMoves[chosenIndex])
-        # print()
 
         return legalMoves[chosenIndex]
     
